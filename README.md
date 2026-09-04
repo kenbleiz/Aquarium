@@ -11,8 +11,8 @@ A living ASCII aquarium as a transparent **OBS Browser Source**, plus a Twitch c
 1. `npm install` puis `npm start`
 2. Dans OBS : **Sources → + → Browser**
    - URL : `http://127.0.0.1:3000/`
-   - Width / Largeur : `1280`
-   - Height / Hauteur : `480` (ou `1920 × 540` en 1080p)
+   - Width / Largeur : **`1920`**
+   - Height / Hauteur : **`1080`**
    - Cocher **Shutdown source when not visible** : non (laissez tourner)
    - CSS personnalisé / Custom CSS :
 
@@ -20,7 +20,13 @@ A living ASCII aquarium as a transparent **OBS Browser Source**, plus a Twitch c
 body { background-color: rgba(0, 0, 0, 0) !important; margin: 0; overflow: hidden; }
 ```
 
-3. Placez la source en bas (ou plein cadre). Le fond est déjà transparent ; le CSS OBS retire le blanc par défaut.
+3. Placez la source en **plein cadre** (0, 0) — l’overlay remplit le 1920×1080, fond transparent.
+
+**Si le bac est vide (pas de poissons) :**
+- Le serveur `npm start` doit rester lancé. L’URL OBS doit être `http://127.0.0.1:3000/` — **pas** un fichier HTML local.
+- Testez d’abord [http://127.0.0.1:3000/?preview=1](http://127.0.0.1:3000/?preview=1) : le HUD doit afficher `🐟 12` (ou plus), pas `🐟 0`.
+- `!fish` / `!poisson` dans le chat (ou sur `/debug.html`) adopte un poisson à votre nom.
+- Vous pouvez supprimer `data/aquarium.json` puis relancer pour réinitialiser le bac.
 
 Page de test local (sans OBS) : [http://127.0.0.1:3000/?preview=1](http://127.0.0.1:3000/?preview=1) — `?preview=1` ajoute un fond océan sombre (l’overlay OBS reste transparent).  
 Simulateur de chat : [http://127.0.0.1:3000/debug.html](http://127.0.0.1:3000/debug.html)
@@ -108,4 +114,4 @@ L’état vit **côté serveur**. L’overlay est un renderer synchro ~12 FPS vi
 
 ## English (short)
 
-Transparent OBS Browser Source + Twitch IRC bot. `npm start`, add Browser source `http://127.0.0.1:3000/` at 1280×480, paste the CSS above. Put Twitch creds in `.env` from [twitchapps.com/tmi](https://twitchapps.com/tmi/). The tank runs autonomously (fish, bubbles, day/night, breeding, events) even with nobody chatting. Persistence is `data/aquarium.json`.
+Transparent OBS Browser Source + Twitch IRC bot. `npm start`, add Browser source `http://127.0.0.1:3000/` at **1920×1080**, paste the CSS above. Put Twitch creds in `.env` from [twitchapps.com/tmi](https://twitchapps.com/tmi/). The tank runs autonomously (fish, bubbles, day/night, breeding, events) even with nobody chatting. Persistence is `data/aquarium.json`.

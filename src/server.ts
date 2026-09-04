@@ -104,7 +104,11 @@ export async function createApp(): Promise<{
   const startLoop = (): void => {
     const dt = 1 / Math.max(4, config.fps);
     loop = setInterval(() => {
-      game.tick(dt);
+      try {
+        game.tick(dt);
+      } catch (err) {
+        console.error("[tick]", err);
+      }
       if (clients.size === 0) return;
       const payload = JSON.stringify({ type: "state", data: game.snapshot() });
       for (const c of clients) {

@@ -179,7 +179,7 @@ export function fishArt(rarity: Rarity, facing: 1 | -1, growth: Growth, puffer =
     if (L) return ["<(o)"];
     return ["(o)>"];
   }
-  if (rarity === "common") return [L ? "<><" : "><>"];
+  if (rarity === "common") return [L ? "<)))><" : "><(((>"];
   if (rarity === "uncommon") return [L ? "<*)))><" : "><(((*>"];
   if (rarity === "rare") return [L ? "<°)))><" : "><(((°>"];
   if (rarity === "epic") {
