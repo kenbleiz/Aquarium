@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ASCII Aquarium — Debug chat</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      body { background: #071018; color: #dff; padding: 16px; overflow: auto; }
+      form, .row { display: flex; gap: 8px; margin: 8px 0 16px; flex-wrap: wrap; }
+      input, button {
+        font: inherit;
+        padding: 6px 10px;
+        background: #10202a;
+        color: #e8f6ff;
+        border: 1px solid #3a6;
+      }
+      #log { white-space: pre-wrap; max-height: 180px; overflow: auto; }
+      iframe { width: 100%; height: 520px; border: 1px solid #245; background: transparent; }
+    </style>
+  </head>
+  <body>
+    <h1>Debug — simule le chat Twitch</h1>
+    <p>Sans token Twitch, envoie des commandes ici. L’overlay ci-dessous se met à jour en direct.</p>
+    <form id="f">
+      <input id="user" value="Alice" placeholder="pseudo" />
+      <input id="msg" value="!fish" placeholder="!feed" style="min-width: 280px" />
+      <button>Envoyer</button>
+    </form>
+    <div class="row">
+      <button type="button" data-c="!fish">!fish</button>
+      <button type="button" data-c="!feed">!feed</button>
+      <button type="button" data-c="!aquarium">!aquarium</button>
+      <button type="button" data-c="!myfish">!myfish</button>
+      <button type="button" data-c="!treasure">!treasure</button>
+      <button type="button" data-c="!catch">!catch</button>
+      <button type="button" data-c="!race">!race</button>
+      <button type="button" data-c="!shop">!shop</button>
+      <button type="button" data-c="!help">!help</button>
+    </div>
+    <pre id="log"></pre>
+    <iframe src="/?preview=1" title="overlay"></iframe>
+    <script>
+      const log = document.getElementById("log");
+      async function send(user, message) {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user, message }),
+        });
+        const data = await res.json();
+        log.textContent = `${user}: ${message}\n→ ${data.reply || "(pas de réponse)"}\n\n` + log.textContent;
+      }
+      document.getElementById("f").onsubmit = (e) => {
+        e.preventDefault();
+        send(document.getElementById("user").value, document.getElementById("msg").value);
+      };
+      document.querySelectorAll("button[data-c]").forEach((b) => {
+        b.onclick = () => send(document.getElementById("user").value, b.dataset.c);
+      });
+    </script>
+  </body>
+</html>
