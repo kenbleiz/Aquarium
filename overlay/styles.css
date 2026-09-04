@@ -8,9 +8,8 @@ body {
   height: 100%;
 }
 
-body {
-  background-color: rgba(0, 0, 0, 0);
-  font-family: "Cascadia Mono", "Fira Code", "JetBrains Mono", "Consolas", "Courier New", monospace;
+body.preview {
+  background: radial-gradient(ellipse at 50% 30%, #16324a 0%, #071018 62%, #04080c 100%) !important;
 }
 
 #app {

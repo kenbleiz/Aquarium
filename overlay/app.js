@@ -137,3 +137,7 @@ function connect() {
 }
 
 connect();
+
+if (new URLSearchParams(location.search).has("preview")) {
+  document.body.classList.add("preview");
+}

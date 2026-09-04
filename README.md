@@ -22,7 +22,7 @@ body { background-color: rgba(0, 0, 0, 0) !important; margin: 0; overflow: hidde
 
 3. Placez la source en bas (ou plein cadre). Le fond est déjà transparent ; le CSS OBS retire le blanc par défaut.
 
-Page de test local (sans OBS) : [http://127.0.0.1:3000/](http://127.0.0.1:3000/)  
+Page de test local (sans OBS) : [http://127.0.0.1:3000/?preview=1](http://127.0.0.1:3000/?preview=1) — `?preview=1` ajoute un fond océan sombre (l’overlay OBS reste transparent).  
 Simulateur de chat : [http://127.0.0.1:3000/debug.html](http://127.0.0.1:3000/debug.html)
 
 ---
