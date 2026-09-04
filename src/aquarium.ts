@@ -385,7 +385,7 @@ export class Aquarium {
         x: rand(1, this.w - 2),
         y: rand(this.floorY() - 4, this.floorY()),
         speed: rand(0.35, 1.1),
-        ch: chance(0.25) ? "O" : chance(0.5) ? "o" : ".",
+        ch: chance(0.2) ? "◦" : chance(0.45) ? "°" : chance(0.75) ? "o" : "O",
       });
     }
   }
@@ -853,13 +853,52 @@ export class Aquarium {
     const drawables: Snapshot["drawables"] = [];
     const frame = Math.floor(this.time * 2);
 
-    const foamLine = Array.from({ length: this.w }, (_, x) => ((x + frame) % 4 === 0 ? "-" : "~")).join("");
-    drawables.push({ x: 0, y: 0, lines: [foamLine], color: "foam", z: 0 });
-    const sand1 = Array.from({ length: this.w }, (_, x) =>
-      (x + Math.floor(this.time)) % 2 === 0 ? "." : ":",
-    ).join("");
+    const surface = Array.from({ length: this.w }, (_, x) => {
+      if (x === 0) return "╭";
+      if (x === this.w - 1) return "╮";
+      const w = (x + frame) % 8;
+      if (w === 3) return "≈";
+      if (w === 7) return "~";
+      return "─";
+    }).join("");
+    drawables.push({ x: 0, y: 0, lines: [surface], color: "glass", z: 0 });
+
+    const night = phase === "night";
+    const rayCount = night ? 3 : 5;
+    for (let i = 0; i < rayCount; i++) {
+      const x = Math.floor(((i + 0.5) * this.w) / rayCount) + Math.round(Math.sin(this.time * 0.35 + i) * 2);
+      for (let y = 2; y < this.h - 4; y += 3) {
+        if ((y + frame + i * 2) % 6 === 0) {
+          drawables.push({ x: clamp(x, 1, this.w - 2), y, lines: ["·"], color: "ray", z: 0.4 });
+        }
+      }
+    }
+
+    const silt = Array.from({ length: this.w }, (_, x) => {
+      if (x === 0 || x === this.w - 1) return "│";
+      return (x * 7 + Math.floor(this.time)) % 9 === 0 ? "." : " ";
+    }).join("");
+    drawables.push({ x: 0, y: this.h - 3, lines: [silt], color: "sand", z: 1 });
+
+    const sand1 = Array.from({ length: this.w }, (_, x) => {
+      if (x === 0 || x === this.w - 1) return "│";
+      const n = (x + Math.floor(this.time * 0.25)) % 4;
+      return n === 0 ? "." : n === 2 ? "·" : " ";
+    }).join("");
     drawables.push({ x: 0, y: this.h - 2, lines: [sand1], color: "sand", z: 1 });
-    drawables.push({ x: 0, y: this.h - 1, lines: ["░".repeat(this.w)], color: "sand", z: 1 });
+
+    const floor = Array.from({ length: this.w }, (_, x) => {
+      if (x === 0) return "╰";
+      if (x === this.w - 1) return "╯";
+      return (x % 11 === 0 ? "░" : "─");
+    }).join("");
+    drawables.push({ x: 0, y: this.h - 1, lines: [floor], color: "glass", z: 1 });
+
+    for (let y = 1; y < this.h - 1; y++) {
+      if (y === this.h - 3 || y === this.h - 2) continue;
+      drawables.push({ x: 0, y, lines: ["│"], color: "glass", z: 9 });
+      drawables.push({ x: this.w - 1, y, lines: ["│"], color: "glass", z: 9 });
+    }
 
     for (const d of this.decors) {
       const art = decorArt(d.kind, frame + d.x);
@@ -867,7 +906,7 @@ export class Aquarium {
       drawables.push({ x: Math.round(d.x), y: this.floorY() - h + 1, lines: art.lines, color: art.color, z: 2 });
     }
     for (const fd of this.food) {
-      drawables.push({ x: Math.round(fd.x), y: Math.round(fd.y), lines: ["*"], color: "food", z: 3 });
+      drawables.push({ x: Math.round(fd.x), y: Math.round(fd.y), lines: ["•"], color: "food", z: 3 });
     }
     for (const c of this.crabs) {
       drawables.push({
@@ -879,17 +918,18 @@ export class Aquarium {
       });
     }
     for (const f of this.fish) {
-      const lines = fishArt(f.rarity, f.facing, f.growth, f.species === "puffer");
+      const lines = fishArt(f.rarity, f.facing, f.growth, f.species);
       const glyph = accessoryGlyph(f.accessory);
       const art = glyph ? [glyph, ...lines] : lines;
-      const label = f.name.slice(0, 10);
+      const label = f.owner ? f.name.slice(0, 10) : undefined;
       drawables.push({
         x: Math.round(f.x),
-        y: Math.max(0, Math.round(f.y) - (glyph ? 1 : 0)),
+        y: Math.max(1, Math.round(f.y) - (glyph ? 1 : 0)),
         lines: art,
         color: f.rarity,
         z: 5 + (RARITY_SCORE[f.rarity] ?? 1) * 0.01,
         label,
+        owned: Boolean(f.owner),
       });
     }
     for (const p of this.predators) {

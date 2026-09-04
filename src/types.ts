@@ -139,6 +139,7 @@ export interface Drawable {
   color: string;
   z: number;
   label?: string;
+  owned?: boolean;
 }
 
 export interface Snapshot {

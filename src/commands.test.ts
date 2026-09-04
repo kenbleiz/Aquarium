@@ -145,3 +145,15 @@ test("1080p grid is 160x48", () => {
   assert.equal(snap.h, 48);
   assert.ok(game.fish.length >= 12);
 });
+
+test("snapshot draws a glass tank frame", () => {
+  const game = new Aquarium({ width: 80, height: 24 });
+  game.seedWorld();
+  const snap = game.snapshot();
+  const top = snap.drawables.find((d) => d.y === 0 && d.color === "glass");
+  const floor = snap.drawables.find((d) => d.y === snap.h - 1 && d.color === "glass");
+  assert.ok(top?.lines[0]?.startsWith("╭"));
+  assert.ok(top?.lines[0]?.endsWith("╮"));
+  assert.ok(floor?.lines[0]?.startsWith("╰"));
+  assert.ok(floor?.lines[0]?.endsWith("╯"));
+});
