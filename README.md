@@ -22,6 +22,12 @@ body { background-color: rgba(0, 0, 0, 0) !important; margin: 0; overflow: hidde
 
 3. Placez la source en bas (ou plein cadre). Le fond est déjà transparent ; le CSS OBS retire le blanc par défaut.
 
+**Si le bac est vide (pas de poissons) :**
+- Le serveur `npm start` doit rester lancé. L’URL OBS doit être `http://127.0.0.1:3000/` — **pas** un fichier HTML local.
+- Testez d’abord [http://127.0.0.1:3000/?preview=1](http://127.0.0.1:3000/?preview=1) : le HUD doit afficher `🐟 8` (ou plus), pas `🐟 0`.
+- `!fish` / `!poisson` dans le chat (ou sur `/debug.html`) adopte un poisson à votre nom.
+- Vous pouvez supprimer `data/aquarium.json` puis relancer pour réinitialiser le bac.
+
 Page de test local (sans OBS) : [http://127.0.0.1:3000/?preview=1](http://127.0.0.1:3000/?preview=1) — `?preview=1` ajoute un fond océan sombre (l’overlay OBS reste transparent).  
 Simulateur de chat : [http://127.0.0.1:3000/debug.html](http://127.0.0.1:3000/debug.html)
 

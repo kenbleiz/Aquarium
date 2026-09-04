@@ -120,3 +120,19 @@ test("autonomous tick without chat", () => {
   assert.ok(moved);
   rmSync(dir, { recursive: true, force: true });
 });
+
+test("tank stays populated and fish do not stack", () => {
+  const { game, dir } = make();
+  assert.ok(game.fish.length >= 8);
+  game.fish = [];
+  for (let i = 0; i < 30; i++) game.tick(0.1);
+  assert.ok(game.fish.length >= 8, "respawn if emptied");
+  const cells = new Set(game.fish.map((f) => `${Math.round(f.x)},${Math.round(f.y)}`));
+  assert.ok(cells.size >= Math.min(6, game.fish.length), "fish occupy distinct cells");
+  const snap = game.snapshot();
+  const drawn = snap.drawables.filter((d) =>
+    ["common", "uncommon", "rare", "epic", "legendary", "mythic"].includes(d.color),
+  );
+  assert.ok(drawn.length >= 8);
+  rmSync(dir, { recursive: true, force: true });
+});

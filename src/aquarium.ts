@@ -37,7 +37,8 @@ import type {
   Viewer,
 } from "./types.js";
 
-const MAX_FISH = 42;
+const MAX_FISH = 28;
+const MIN_FISH = 8;
 const MAX_FOOD = 48;
 const MAX_BUBBLES = 80;
 const MAX_DECOR = 28;
@@ -121,7 +122,7 @@ export class Aquarium {
   restore(blob: PersistBlob): void {
     this.time = blob.time ?? 0;
     this.tickCount = blob.tickCount ?? 0;
-    this.fish = blob.fish ?? [];
+    this.fish = (blob.fish ?? []).slice(0, MAX_FISH);
     this.decors = blob.decors ?? [];
     this.crabs = blob.crabs ?? [];
     this.lastAction = blob.lastAction ?? this.lastAction;
@@ -129,12 +130,27 @@ export class Aquarium {
     if (this.fish.length === 0) this.seedWorld();
     if (this.decors.length === 0) this.seedDecor();
     if (this.crabs.length === 0) this.crabs.push(this.makeCrab());
+    this.spreadOverlaps();
+    this.ensurePopulation();
   }
 
   seedWorld(): void {
     this.seedDecor();
     this.crabs = [this.makeCrab()];
-    for (let i = 0; i < 8; i++) this.spawnWild(i < 6 ? "common" : i === 6 ? "uncommon" : "rare");
+    const mix: Rarity[] = [
+      "common",
+      "common",
+      "common",
+      "uncommon",
+      "uncommon",
+      "rare",
+      "uncommon",
+      "rare",
+      "epic",
+      "common",
+    ];
+    for (const r of mix) this.spawnWild(r);
+    this.spreadOverlaps();
     this.action("Des poissons sauvages explorent le bac.");
   }
 
@@ -196,7 +212,8 @@ export class Aquarium {
   }
 
   makeFish(partial: Partial<Fish> & Pick<Fish, "name" | "species" | "rarity">): Fish {
-    const speed = SPECIES[partial.species].speed;
+    const spec = SPECIES[partial.species] ?? SPECIES.guppy;
+    const speed = spec.speed;
     const facing: 1 | -1 = chance(0.5) ? 1 : -1;
     return {
       id: uid("f"),
@@ -370,7 +387,7 @@ export class Aquarium {
     if (storm && this.tickCount % 4 === 0) this.spawnBubbles(6);
     if (this.tickCount % 10 === 0) this.spawnBubbles(night ? 1 : 2);
     if (this.food.length === 0 && chance(0.008)) this.dropFood(1);
-    if (this.time - this.lastAmbientFish > 25 && this.fish.length < 10) {
+    if (this.time - this.lastAmbientFish > 25 && this.fish.length < MIN_FISH + 2) {
       this.spawnWild();
       this.lastAmbientFish = this.time;
     }
@@ -383,6 +400,8 @@ export class Aquarium {
     this.maybeBreed();
     this.maybeAmbient();
     this.ageAndDeath(dt);
+    this.ensurePopulation();
+    if (this.tickCount % 24 === 0) this.spreadOverlaps();
 
     if (this.race && !this.race.finished) this.tickRace(dt);
   }
@@ -437,18 +456,8 @@ export class Aquarium {
   }
 
   tickFish(dt: number, speedMul: number): void {
-    const school: Record<string, { x: number; y: number; vx: number; n: number }> = {};
     for (const f of this.fish) {
-      if (!SPECIES[f.species].school) continue;
-      const s = (school[f.species] ??= { x: 0, y: 0, vx: 0, n: 0 });
-      s.x += f.x;
-      s.y += f.y;
-      s.vx += f.vx;
-      s.n++;
-    }
-
-    for (const f of this.fish) {
-      const spec = SPECIES[f.species];
+      const spec = SPECIES[f.species] ?? SPECIES.guppy;
       f.age += dt;
       f.hunger = clamp(f.hunger + dt * (this.event?.kind === "feeding_frenzy" ? 0.08 : 0.32), 0, 100);
       if (f.hunger > 70) f.happiness = clamp(f.happiness - dt * 1.4, 0, 100);
@@ -470,6 +479,15 @@ export class Aquarium {
 
       let ax = 0;
       let ay = 0;
+      for (const o of this.fish) {
+        if (o.id === f.id) continue;
+        const d = dist(f.x, f.y, o.x, o.y);
+        if (d < 2.8 && d > 0.001) {
+          ax += ((f.x - o.x) / d) * 2.2;
+          ay += ((f.y - o.y) / d) * 2.2;
+        }
+      }
+
       const pred = this.nearestPred(f);
       if (pred && dist(f.x, f.y, pred.x, pred.y) < 16) {
         ax += Math.sign(f.x - pred.x) * 2.2;
@@ -481,11 +499,33 @@ export class Aquarium {
           ax += Math.sign(fd.x - f.x) * 1.3;
           ay += Math.sign(fd.y - f.y) * 1.1;
         }
-      } else if (spec.school && school[f.species] && school[f.species]!.n > 1) {
-        const s = school[f.species]!;
-        ax += (s.x / s.n - f.x) * 0.08;
-        ay += (s.y / s.n - f.y) * 0.08;
-        ax += (s.vx / s.n - f.vx) * 0.15;
+      } else if (spec.school) {
+        let cx = 0;
+        let cy = 0;
+        let cvx = 0;
+        let n = 0;
+        for (const o of this.fish) {
+          if (o.id === f.id || o.species !== f.species) continue;
+          const d = dist(f.x, f.y, o.x, o.y);
+          if (d > 0.001 && d < 14) {
+            cx += o.x;
+            cy += o.y;
+            cvx += o.vx;
+            n++;
+          }
+        }
+        if (n > 0) {
+          ax += (cx / n - f.x) * 0.035;
+          ay += (cy / n - f.y) * 0.035;
+          ax += (cvx / n - f.vx) * 0.08;
+        }
+        if (this.time >= f.retargetAt) {
+          f.targetX = rand(3, this.w - 4);
+          f.targetY = rand(this.waterTop() + 2, this.floorY() - 3);
+          f.retargetAt = this.time + rand(4, 10);
+        }
+        ax += Math.sign(f.targetX - f.x) * 0.28;
+        ay += Math.sign(f.targetY - f.y) * 0.16;
       } else {
         if (this.time >= f.retargetAt) {
           f.targetX = rand(3, this.w - 4);
@@ -558,7 +598,7 @@ export class Aquarium {
   }
 
   maybeBreed(): void {
-    if (this.tickCount % 24 !== 0 || this.fish.length >= MAX_FISH - 1) return;
+    if (this.tickCount % 24 !== 0 || this.fish.length >= MAX_FISH - 4) return;
     for (let i = 0; i < this.fish.length; i++) {
       const a = this.fish[i]!;
       if (a.growth < 1 || a.happiness < 72 || a.hunger > 45) continue;
@@ -580,7 +620,7 @@ export class Aquarium {
           growth: 0,
         });
         this.fish.push(baby);
-        this.action(`${a.name} & ${b.name} ont un bébé ${SPECIES[a.species].nameFr} !`);
+        this.action(`${a.name} & ${b.name} ont un bébé ${SPECIES[a.species]?.nameFr ?? a.species} !`);
         return;
       }
     }
@@ -601,7 +641,8 @@ export class Aquarium {
     if (this.tickCount % 12 !== 0) return;
     const keep: Fish[] = [];
     for (const f of this.fish) {
-      const lifespan = (f.owner ? 900 : 520) + RARITY_SCORE[f.rarity] * 40;
+      const score = RARITY_SCORE[f.rarity] ?? 1;
+      const lifespan = (f.owner ? 900 : 520) + score * 40;
       const starving = f.hunger > 96;
       const old = f.age > lifespan && chance(0.08);
       const starved = starving && f.age > 80 && chance(0.05);
@@ -627,9 +668,7 @@ export class Aquarium {
           if (v) v.fishId = neo.id;
           this.action(`${f.name} s'est réincarné·e — toujours avec ${f.ownerDisplay ?? f.owner}.`);
         } else {
-          this.action(`${f.name} rejoint le courant… un sauvage prend sa place.`);
-          const neo = this.spawnWild();
-          if (neo) keep.push(neo);
+          this.action(`${f.name} rejoint le courant…`);
         }
       } else {
         keep.push(f);
@@ -637,6 +676,33 @@ export class Aquarium {
     }
     this.fish = keep.slice(0, MAX_FISH);
     void dt;
+  }
+
+  ensurePopulation(): void {
+    let guard = 0;
+    while (this.fish.length < MIN_FISH && guard < MIN_FISH) {
+      this.spawnWild(guard < 4 ? "common" : "uncommon");
+      guard++;
+    }
+  }
+
+  spreadOverlaps(): void {
+    const used = new Set<string>();
+    for (const f of this.fish) {
+      let x = Math.round(f.x);
+      let y = Math.round(f.y);
+      let key = `${x},${y}`;
+      let n = 0;
+      while (used.has(key) && n < 24) {
+        f.x = clamp(f.x + rand(-5, 5), 3, this.w - 5);
+        f.y = clamp(f.y + rand(-4, 4), this.waterTop() + 2, this.floorY() - 3);
+        x = Math.round(f.x);
+        y = Math.round(f.y);
+        key = `${x},${y}`;
+        n++;
+      }
+      used.add(key);
+    }
   }
 
   tickRace(dt: number): void {
@@ -784,13 +850,13 @@ export class Aquarium {
       const lines = fishArt(f.rarity, f.facing, f.growth, f.species === "puffer");
       const glyph = accessoryGlyph(f.accessory);
       const art = glyph ? [glyph, ...lines] : lines;
-      const label = f.owner ? f.name.slice(0, 10) : undefined;
+      const label = f.name.slice(0, 10);
       drawables.push({
         x: Math.round(f.x),
         y: Math.max(0, Math.round(f.y) - (glyph ? 1 : 0)),
         lines: art,
         color: f.rarity,
-        z: 5 + RARITY_SCORE[f.rarity] * 0.01,
+        z: 5 + (RARITY_SCORE[f.rarity] ?? 1) * 0.01,
         label,
       });
     }

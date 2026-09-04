@@ -28,6 +28,8 @@ const COLORS = new Set([
   "label",
 ]);
 
+let wsOk = false;
+
 function emptyGrid(w, h) {
   const ch = Array.from({ length: h }, () => Array.from({ length: w }, () => " "));
   const col = Array.from({ length: h }, () => Array.from({ length: w }, () => "foam"));
@@ -121,9 +123,22 @@ function paint(snap) {
   }
 }
 
+async function pullHttp() {
+  try {
+    const res = await fetch("/api/state", { cache: "no-store" });
+    const data = await res.json();
+    if (data && data.snapshot) paint(data.snapshot);
+  } catch {
+    /* overlay stays on last frame */
+  }
+}
+
 function connect() {
   const proto = location.protocol === "https:" ? "wss" : "ws";
   const ws = new WebSocket(`${proto}://${location.host}/ws`);
+  ws.onopen = () => {
+    wsOk = true;
+  };
   ws.onmessage = (ev) => {
     try {
       const msg = JSON.parse(ev.data);
@@ -132,11 +147,18 @@ function connect() {
       /* ignore */
     }
   };
-  ws.onclose = () => setTimeout(connect, 1000);
+  ws.onclose = () => {
+    wsOk = false;
+    setTimeout(connect, 1000);
+  };
   ws.onerror = () => ws.close();
 }
 
+pullHttp();
 connect();
+setInterval(() => {
+  if (!wsOk) pullHttp();
+}, 1500);
 
 if (new URLSearchParams(location.search).has("preview")) {
   document.body.classList.add("preview");
