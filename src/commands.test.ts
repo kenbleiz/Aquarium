@@ -126,7 +126,7 @@ test("tank stays populated and fish do not stack", () => {
   assert.ok(game.fish.length >= 8);
   game.fish = [];
   for (let i = 0; i < 30; i++) game.tick(0.1);
-  assert.ok(game.fish.length >= 8, "respawn if emptied");
+  assert.ok(game.fish.length >= 12, "respawn if emptied");
   const cells = new Set(game.fish.map((f) => `${Math.round(f.x)},${Math.round(f.y)}`));
   assert.ok(cells.size >= Math.min(6, game.fish.length), "fish occupy distinct cells");
   const snap = game.snapshot();
@@ -135,4 +135,13 @@ test("tank stays populated and fish do not stack", () => {
   );
   assert.ok(drawn.length >= 8);
   rmSync(dir, { recursive: true, force: true });
+});
+
+test("1080p grid is 160x48", () => {
+  const game = new Aquarium({ width: 160, height: 48 });
+  game.seedWorld();
+  const snap = game.snapshot();
+  assert.equal(snap.w, 160);
+  assert.equal(snap.h, 48);
+  assert.ok(game.fish.length >= 12);
 });

@@ -37,11 +37,11 @@ import type {
   Viewer,
 } from "./types.js";
 
-const MAX_FISH = 28;
-const MIN_FISH = 8;
+const MAX_FISH = 36;
+const MIN_FISH = 12;
 const MAX_FOOD = 48;
-const MAX_BUBBLES = 80;
-const MAX_DECOR = 28;
+const MAX_BUBBLES = 140;
+const MAX_DECOR = 36;
 const FEED_CD = 8;
 const TREASURE_CD = 90;
 const FISH_CD = 20;
@@ -91,8 +91,8 @@ export class Aquarium {
   battleBannerUntil = 0;
 
   constructor(opts: AquariumOptions = {}) {
-    this.w = opts.width ?? 96;
-    this.h = opts.height ?? 28;
+    this.w = opts.width ?? 160;
+    this.h = opts.height ?? 48;
     this.dayLength = opts.dayLength ?? 480;
     this.persistPath = opts.persistPath ?? null;
     this.nowFn = opts.now ?? (() => Date.now());
@@ -129,6 +129,21 @@ export class Aquarium {
     this.viewers = new Map((blob.viewers ?? []).map((v) => [v.username.toLowerCase(), v]));
     if (this.fish.length === 0) this.seedWorld();
     if (this.decors.length === 0) this.seedDecor();
+    else {
+      const maxX = this.decors.reduce((m, d) => Math.max(m, d.x), 0);
+      if (maxX < this.w * 0.45) {
+        const extras: DecorKind[] = ["seaweed", "coral", "rock", "anemone", "seaweed", "chest"];
+        extras.forEach((kind, i) => {
+          this.decors.push({
+            id: uid("d"),
+            kind,
+            x: Math.floor(this.w * 0.5) + i * Math.max(6, Math.floor(this.w * 0.08)),
+            y: this.floorY(),
+            placedBy: null,
+          });
+        });
+      }
+    }
     if (this.crabs.length === 0) this.crabs.push(this.makeCrab());
     this.spreadOverlaps();
     this.ensurePopulation();
@@ -136,17 +151,19 @@ export class Aquarium {
 
   seedWorld(): void {
     this.seedDecor();
-    this.crabs = [this.makeCrab()];
+    this.crabs = [this.makeCrab(), this.makeCrab()];
     const mix: Rarity[] = [
       "common",
       "common",
       "common",
+      "common",
+      "uncommon",
       "uncommon",
       "uncommon",
       "rare",
-      "uncommon",
       "rare",
       "epic",
+      "uncommon",
       "common",
     ];
     for (const r of mix) this.spawnWild(r);
@@ -270,11 +287,26 @@ export class Aquarium {
   }
 
   seedDecor(): void {
-    const kinds: DecorKind[] = ["seaweed", "seaweed", "seaweed", "seaweed", "coral", "coral", "rock", "rock", "chest", "anemone"];
+    const kinds: DecorKind[] = [
+      "seaweed",
+      "seaweed",
+      "seaweed",
+      "seaweed",
+      "seaweed",
+      "seaweed",
+      "coral",
+      "coral",
+      "coral",
+      "rock",
+      "rock",
+      "chest",
+      "anemone",
+      "anemone",
+    ];
     this.decors = kinds.map((kind, i) => ({
       id: uid("d"),
       kind,
-      x: 3 + i * Math.max(4, Math.floor((this.w - 10) / kinds.length)),
+      x: 3 + i * Math.max(5, Math.floor((this.w - 12) / kinds.length)),
       y: this.floorY(),
       placedBy: null,
     }));

@@ -29,6 +29,8 @@ const COLORS = new Set([
 ]);
 
 let wsOk = false;
+let fittedKey = "";
+const hud = document.getElementById("hud");
 
 function emptyGrid(w, h) {
   const ch = Array.from({ length: h }, () => Array.from({ length: w }, () => " "));
@@ -100,6 +102,25 @@ function esc(s) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+function fitTank(cols, rows) {
+  if (!cols || !rows) return;
+  const availW = Math.max(200, (window.innerWidth || 1920) - 48);
+  const availH = Math.max(200, (window.innerHeight || 1080) - (hud?.offsetHeight || 64) - 28);
+  const probe = document.createElement("pre");
+  probe.style.cssText =
+    "position:absolute;left:-9999px;top:0;margin:0;visibility:hidden;white-space:pre;font-family:inherit;letter-spacing:inherit;line-height:1.05;";
+  const line = "M".repeat(cols);
+  probe.textContent = Array.from({ length: rows }, () => line).join("\n");
+  probe.style.fontSize = "10px";
+  document.body.appendChild(probe);
+  const rw = probe.offsetWidth / 10;
+  const rh = probe.offsetHeight / 10;
+  probe.remove();
+  if (!rw || !rh) return;
+  const size = Math.max(12, Math.min(availW / rw, availH / rh));
+  tank.style.fontSize = `${size}px`;
+}
+
 function paint(snap) {
   if (!snap) return;
   app.className = snap.phase || "day";
@@ -114,6 +135,12 @@ function paint(snap) {
   const draws = (snap.drawables || []).slice().sort((a, b) => a.z - b.z);
   for (const d of draws) blit(grid, d);
   tank.innerHTML = toHtml(grid);
+
+  const key = `${snap.w}x${snap.h}@${window.innerWidth}x${window.innerHeight}`;
+  if (key !== fittedKey) {
+    fitTank(snap.w, snap.h);
+    fittedKey = key;
+  }
 
   if (snap.catchWord) {
     catchEl.hidden = false;
@@ -159,6 +186,10 @@ connect();
 setInterval(() => {
   if (!wsOk) pullHttp();
 }, 1500);
+
+window.addEventListener("resize", () => {
+  fittedKey = "";
+});
 
 if (new URLSearchParams(location.search).has("preview")) {
   document.body.classList.add("preview");

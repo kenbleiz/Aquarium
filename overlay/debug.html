@@ -15,7 +15,20 @@
         border: 1px solid #3a6;
       }
       #log { white-space: pre-wrap; max-height: 180px; overflow: auto; }
-      iframe { width: 100%; height: 520px; border: 1px solid #245; background: transparent; }
+      iframe {
+        width: 1920px;
+        height: 1080px;
+        border: 0;
+        transform: scale(0.5);
+        transform-origin: top left;
+        background: transparent;
+      }
+      .preview-wrap {
+        width: 960px;
+        height: 540px;
+        overflow: hidden;
+        border: 1px solid #245;
+      }
     </style>
   </head>
   <body>
@@ -38,7 +51,9 @@
       <button type="button" data-c="!help">!help</button>
     </div>
     <pre id="log"></pre>
-    <iframe src="/?preview=1" title="overlay"></iframe>
+    <div class="preview-wrap">
+      <iframe src="/?preview=1" title="overlay"></iframe>
+    </div>
     <script>
       const log = document.getElementById("log");
       async function send(user, message) {
