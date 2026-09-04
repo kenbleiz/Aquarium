@@ -95,6 +95,7 @@ export class Aquarium {
     this.dayLength = opts.dayLength ?? 480;
     this.persistPath = opts.persistPath ?? null;
     this.nowFn = opts.now ?? (() => Date.now());
+    this.time = this.dayLength * 0.28;
   }
 
   waterTop(): number {
