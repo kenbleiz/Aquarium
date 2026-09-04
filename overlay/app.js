@@ -1,11 +1,13 @@
 const tank = document.getElementById("tank");
 const banner = document.getElementById("banner");
+const eventBar = document.getElementById("event-bar");
 const last = document.getElementById("last");
 const counts = document.getElementById("counts");
 const phaseEl = document.getElementById("phase");
 const modeEl = document.getElementById("mode");
 const app = document.getElementById("app");
 const catchEl = document.getElementById("catch");
+const hud = document.getElementById("hud");
 
 const COLORS = new Set([
   "common",
@@ -25,12 +27,14 @@ const COLORS = new Set([
   "shark",
   "crab",
   "foam",
+  "glass",
+  "ray",
   "label",
+  "label-owned",
 ]);
 
 let wsOk = false;
 let fittedKey = "";
-const hud = document.getElementById("hud");
 
 function emptyGrid(w, h) {
   const ch = Array.from({ length: h }, () => Array.from({ length: w }, () => " "));
@@ -60,12 +64,13 @@ function blit(grid, d) {
     if (ly >= 0 && ly < grid.ch.length) {
       const start = Math.max(0, d.x);
       const label = String(d.label).slice(0, 10);
+      const cls = d.owned ? "label-owned" : "label";
       for (let i = 0; i < label.length; i++) {
         const gx = start + i;
         if (gx >= grid.ch[0].length) break;
         if (grid.ch[ly][gx] === " ") {
           grid.ch[ly][gx] = label[i];
-          grid.col[ly][gx] = "label";
+          grid.col[ly][gx] = cls;
         }
       }
     }
@@ -104,11 +109,12 @@ function esc(s) {
 
 function fitTank(cols, rows) {
   if (!cols || !rows) return;
-  const availW = Math.max(200, (window.innerWidth || 1920) - 48);
-  const availH = Math.max(200, (window.innerHeight || 1080) - (hud?.offsetHeight || 64) - 28);
+  const hudH = (hud?.offsetHeight || 48) + (eventBar?.hidden ? 0 : eventBar.offsetHeight || 0) + 28;
+  const availW = Math.max(200, (window.innerWidth || 1920) - 44);
+  const availH = Math.max(200, (window.innerHeight || 1080) - hudH);
   const probe = document.createElement("pre");
   probe.style.cssText =
-    "position:absolute;left:-9999px;top:0;margin:0;visibility:hidden;white-space:pre;font-family:inherit;letter-spacing:inherit;line-height:1.05;";
+    "position:absolute;left:-9999px;top:0;margin:0;visibility:hidden;white-space:pre;font-family:\"IBM Plex Mono\",ui-monospace,monospace;letter-spacing:inherit;line-height:1.08;";
   const line = "M".repeat(cols);
   probe.textContent = Array.from({ length: rows }, () => line).join("\n");
   probe.style.fontSize = "10px";
@@ -124,19 +130,22 @@ function fitTank(cols, rows) {
 function paint(snap) {
   if (!snap) return;
   app.className = snap.phase || "day";
-  counts.textContent = `🐟 ${snap.hud.fish} · * ${snap.hud.food}`;
+  counts.textContent = `${snap.hud.fish}  ·  ${snap.hud.food}`;
   phaseEl.textContent = snap.hud.phaseLabel;
   modeEl.textContent = snap.hud.twitch;
   modeEl.classList.toggle("live", snap.hud.twitch === "live");
-  banner.textContent = snap.banner || snap.hud.event || "";
   last.textContent = snap.hud.lastAction || "";
+
+  const eventText = snap.banner || snap.hud.event || (snap.race?.lead ? `Course · ${snap.race.lead}` : "");
+  banner.textContent = eventText;
+  eventBar.hidden = !eventText;
 
   const grid = emptyGrid(snap.w, snap.h);
   const draws = (snap.drawables || []).slice().sort((a, b) => a.z - b.z);
   for (const d of draws) blit(grid, d);
   tank.innerHTML = toHtml(grid);
 
-  const key = `${snap.w}x${snap.h}@${window.innerWidth}x${window.innerHeight}`;
+  const key = `${snap.w}x${snap.h}@${window.innerWidth}x${window.innerHeight}@${eventBar.hidden}`;
   if (key !== fittedKey) {
     fitTank(snap.w, snap.h);
     fittedKey = key;

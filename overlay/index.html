@@ -4,23 +4,34 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=1920, height=1080, initial-scale=1" />
     <title>ASCII Aquarium — OBS Overlay</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <div id="app" class="day">
       <header id="hud">
-        <div class="hud-row">
-          <span id="brand">≈ ASCII AQUARIUM ≈</span>
-          <span id="phase">Jour</span>
-          <span id="counts">🐟 0 · * 0</span>
-          <span id="mode" class="pill">dry-run</span>
+        <div class="hud-left">
+          <span id="brand" class="chip brand">AQUARIUM</span>
+          <span id="phase" class="chip">Jour</span>
+          <span id="counts" class="chip">0 · 0</span>
+          <span id="mode" class="chip pill">dry-run</span>
         </div>
-        <div class="hud-row hud-event">
-          <span id="banner"></span>
-          <span id="last"></span>
+        <div class="hud-right">
+          <span id="last" class="chip quiet"></span>
         </div>
       </header>
-      <pre id="tank" aria-label="aquarium">Connexion au bac…</pre>
+      <div id="event-bar" hidden>
+        <span id="banner"></span>
+      </div>
+      <div id="stage">
+        <div class="caustics" aria-hidden="true"></div>
+        <pre id="tank" aria-label="aquarium">Connexion au bac…</pre>
+      </div>
       <div id="catch" hidden></div>
     </div>
     <script src="/app.js"></script>

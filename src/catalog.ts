@@ -165,68 +165,101 @@ export function speciesForRarity(r: Rarity): SpeciesId {
 }
 
 export function accessoryGlyph(id: AccessoryId | null): string {
-  if (id === "crown") return "^";
-  if (id === "halo") return "°";
-  if (id === "sparkle") return "*";
-  if (id === "monocle") return "o";
+  if (id === "crown") return "ˆ";
+  if (id === "halo") return "˚";
+  if (id === "sparkle") return "✦";
+  if (id === "monocle") return "◦";
   return "";
 }
 
-export function fishArt(rarity: Rarity, facing: 1 | -1, growth: Growth, puffer = false): string[] {
-  const L = facing < 0;
-  if (growth === 0) return [L ? "<°" : "°>"];
-  if (puffer) {
-    if (L) return ["<(o)"];
-    return ["(o)>"];
-  }
-  if (rarity === "common") return [L ? "<)))><" : "><(((>"];
-  if (rarity === "uncommon") return [L ? "<*)))><" : "><(((*>"];
-  if (rarity === "rare") return [L ? "<°)))><" : "><(((°>"];
-  if (rarity === "epic") {
-    if (growth >= 2) return [L ? "<°)))xxx><" : "><xxx(((°>"];
-    return [L ? "<°)))x><" : "><x(((°>"];
-  }
-  if (rarity === "legendary") {
-    if (growth >= 2) return ["*", L ? "<°))))*><" : "><*((((°>"];
-    return [L ? "<°))))*><" : "><*((((°>"];
-  }
-  if (growth >= 2) return ["~*~", L ? "<*)))><{{{°>" : "><{{{°>))>*>"];
-  return [L ? "<*)))><{°>" : "><{°>))>*"];
+type Sprite = { L: string[]; R: string[] };
+
+const BABY: Sprite = { L: ["<˚"], R: ["˚>"] };
+
+const SPECIES_ART: Record<SpeciesId, { adult: Sprite; elder?: Sprite }> = {
+  guppy: { adult: { L: ["<><"], R: ["><>"] }, elder: { L: ["<═><"], R: [">═><"] } },
+  tetra: { adult: { L: ["<≡<"], R: [">≡>"] }, elder: { L: ["<≡≡<"], R: [">≡≡>"] } },
+  minnow: { adult: { L: ["<·<"], R: [">·>"] }, elder: { L: ["<··<"], R: [">··>"] } },
+  clown: { adult: { L: ["<º))><"], R: ["><((º>"] }, elder: { L: ["<º)))><"], R: ["><(((º>"] } },
+  neon: { adult: { L: ["<≈≈<"], R: [">≈≈>"] }, elder: { L: ["<≈≈≈<"], R: [">≈≈≈>"] } },
+  puffer: { adult: { L: ["<(º)"], R: ["(º)>"] }, elder: { L: ["<(ºº)"], R: ["(ºº)>"] } },
+  angel: { adult: { L: ["/º\\<", " \\ /"], R: [">/º\\", " \\ /"] } },
+  tang: { adult: { L: ["<º)))><"], R: ["><(((º>"] }, elder: { L: ["<º))))><"], R: ["><((((º>"] } },
+  betta: { adult: { L: ["<º}}}<"], R: [">{{{º>"] }, elder: { L: ["<º}}}}<"], R: [">{{{{º>"] } },
+  mandarin: { adult: { L: ["<º)*><"], R: ["><*(º>"] }, elder: { L: ["<º))**><"], R: ["><**((º>"] } },
+  discus: { adult: { L: ["( º )"], R: ["( º )"] }, elder: { L: ["(  º  )"], R: ["(  º  )"] } },
+  koi: { adult: { L: ["<º*)))><"], R: ["><(((º*>"] }, elder: { L: ["<º*))))><"], R: ["><((((º*>"] } },
+  moon: { adult: { L: ["(  º  )"], R: ["(  º  )"] }, elder: { L: ["(   º   )"], R: ["(   º   )"] } },
+  dragon: {
+    adult: { L: ["~<{º><"], R: ["><º}>~"] },
+    elder: { L: ["~~<{{º><"], R: ["><º}}>~~"] },
+  },
+  phoenix: {
+    adult: { L: ["*<º{><*"], R: ["*><}º>*"] },
+    elder: { L: ["*~<º{{><*"], R: ["*><}}º>~*"] },
+  },
+};
+
+const RARITY_FALLBACK: Record<Rarity, Sprite> = {
+  common: { L: ["<><"], R: ["><>"] },
+  uncommon: { L: ["<≈><"], R: [">≈><"] },
+  rare: { L: ["<º))><"], R: ["><((º>"] },
+  epic: { L: ["<º)*><"], R: ["><*(º>"] },
+  legendary: { L: ["<º*)))><"], R: ["><(((º*>"] },
+  mythic: { L: ["~<{º><"], R: ["><º}>~"] },
+};
+
+export function fishArt(
+  rarity: Rarity,
+  facing: 1 | -1,
+  growth: Growth,
+  species?: SpeciesId | boolean,
+): string[] {
+  const left = facing < 0;
+  if (growth === 0) return left ? BABY.L : BABY.R;
+
+  const id = typeof species === "string" ? species : species === true ? "puffer" : undefined;
+  const entry = id ? SPECIES_ART[id] : undefined;
+  const sprite = (growth >= 2 && entry?.elder ? entry.elder : entry?.adult) ?? RARITY_FALLBACK[rarity];
+  return left ? sprite.L : sprite.R;
 }
 
 export function decorArt(kind: DecorKind, frame: number): { lines: string[]; color: string } {
-  const sway = frame % 2 === 0;
+  const sway = frame % 4 < 2;
   switch (kind) {
     case "seaweed":
       return {
         color: "weed",
-        lines: sway ? [" |/", " |\\", " |/"] : [" \\|", " /|", " \\|"],
+        lines: sway ? ["  )", " /", " |", " \\", " |"] : [" (", "  \\", "  |", " /", " |"],
       };
     case "coral":
-      return { color: "coral", lines: sway ? ["@{@", " |"] : ["@}@", " |"] };
+      return {
+        color: "coral",
+        lines: sway ? [" *Y*", " /|\\", "  |"] : [" *X*", " /|\\", "  |"],
+      };
     case "rock":
-      return { color: "rock", lines: [".oO."] };
+      return { color: "rock", lines: [" ,oO.", "/____\\"] };
     case "chest":
-      return { color: "chest", lines: ["[$]"] };
+      return { color: "chest", lines: sway ? [" [$]", " └─┘"] : [" [✦]", " └─┘"] };
     case "castle":
-      return { color: "castle", lines: [" /^^\\", " |[]|", " |__|"] };
+      return { color: "castle", lines: [" /^^\\", "/|[]|\\", " |__|"] };
     case "anemone":
-      return { color: "coral", lines: sway ? [" \\|/", " /_\\"] : [" /|\\", " \\_/"] };
+      return { color: "coral", lines: sway ? [" \\:/", " /o\\"] : [" /:\\", " \\o/"] };
     default:
       return { color: "rock", lines: ["."] };
   }
 }
 
 export function sharkArt(facing: 1 | -1): string[] {
-  return facing > 0 ? ["___/\\_", "<°____/"] : ["_/\\___", "\\____°>"];
+  return facing > 0 ? ["  __/\\_", "<º____\\"] : [" _/\\__", "/____º>"];
 }
 
 export function piranhaArt(facing: 1 | -1): string {
-  return facing > 0 ? "<*)=" : "=(*<" ;
+  return facing > 0 ? "<*)═" : "═(*<";
 }
 
 export function crabArt(facing: 1 | -1): string {
-  return facing > 0 ? "(\\/o)" : "(o\\/)";
+  return facing > 0 ? "‹•═" : "═•›";
 }
 
 export function findShop(query: string): ShopItem | DecorItem | undefined {
