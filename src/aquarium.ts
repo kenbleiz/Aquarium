@@ -856,10 +856,9 @@ export class Aquarium {
     const surface = Array.from({ length: this.w }, (_, x) => {
       if (x === 0) return "╭";
       if (x === this.w - 1) return "╮";
-      const w = (x + frame) % 7;
-      if (w === 1) return "≈";
-      if (w === 3) return "~";
-      if (w === 5) return "∼";
+      const w = (x + frame) % 8;
+      if (w === 3) return "≈";
+      if (w === 7) return "~";
       return "─";
     }).join("");
     drawables.push({ x: 0, y: 0, lines: [surface], color: "glass", z: 0 });
@@ -868,8 +867,8 @@ export class Aquarium {
     const rayCount = night ? 3 : 5;
     for (let i = 0; i < rayCount; i++) {
       const x = Math.floor(((i + 0.5) * this.w) / rayCount) + Math.round(Math.sin(this.time * 0.35 + i) * 2);
-      for (let y = 1; y < this.h - 3; y += 2) {
-        if ((y + frame + i * 3) % 6 === 0) {
+      for (let y = 2; y < this.h - 4; y += 3) {
+        if ((y + frame + i * 2) % 6 === 0) {
           drawables.push({ x: clamp(x, 1, this.w - 2), y, lines: ["·"], color: "ray", z: 0.4 });
         }
       }
@@ -877,23 +876,21 @@ export class Aquarium {
 
     const silt = Array.from({ length: this.w }, (_, x) => {
       if (x === 0 || x === this.w - 1) return "│";
-      const n = (x * 5 + Math.floor(this.time)) % 11;
-      return n === 0 ? "." : n === 3 ? "'" : n === 7 ? "," : " ";
+      return (x * 7 + Math.floor(this.time)) % 9 === 0 ? "." : " ";
     }).join("");
     drawables.push({ x: 0, y: this.h - 3, lines: [silt], color: "sand", z: 1 });
 
     const sand1 = Array.from({ length: this.w }, (_, x) => {
       if (x === 0 || x === this.w - 1) return "│";
-      const n = (x + Math.floor(this.time)) % 5;
-      return n === 0 ? ":" : n === 2 ? "." : n === 4 ? "∼" : "·";
+      const n = (x + Math.floor(this.time * 0.25)) % 4;
+      return n === 0 ? "." : n === 2 ? "·" : " ";
     }).join("");
     drawables.push({ x: 0, y: this.h - 2, lines: [sand1], color: "sand", z: 1 });
 
     const floor = Array.from({ length: this.w }, (_, x) => {
       if (x === 0) return "╰";
       if (x === this.w - 1) return "╯";
-      const n = (x * 3 + Math.floor(this.time * 0.5)) % 7;
-      return n === 0 ? "░" : n === 2 ? "▒" : n === 4 ? "░" : "─";
+      return (x % 11 === 0 ? "░" : "─");
     }).join("");
     drawables.push({ x: 0, y: this.h - 1, lines: [floor], color: "glass", z: 1 });
 

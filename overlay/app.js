@@ -130,7 +130,7 @@ function fitTank(cols, rows) {
 function paint(snap) {
   if (!snap) return;
   app.className = snap.phase || "day";
-  counts.textContent = `${snap.hud.fish}  ·  ${snap.hud.food}`;
+  counts.textContent = `${snap.hud.fish} poissons  ·  ${snap.hud.food} •`;
   phaseEl.textContent = snap.hud.phaseLabel;
   modeEl.textContent = snap.hud.twitch;
   modeEl.classList.toggle("live", snap.hud.twitch === "live");
