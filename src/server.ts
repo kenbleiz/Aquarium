@@ -64,7 +64,7 @@ export async function createApp(): Promise<{
     const user = String(req.body?.user ?? req.body?.username ?? "Debug").slice(0, 25);
     const message = String(req.body?.message ?? req.body?.text ?? "");
     const result = handleChat(game, user, message);
-    res.json({ ...result, snapshot: game.snapshot() });
+    res.json({ reply: result.reply, handled: result.handled });
   });
 
   const server = createServer(app);

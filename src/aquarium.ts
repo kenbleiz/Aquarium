@@ -208,8 +208,8 @@ export class Aquarium {
       facing,
       hunger: irand(10, 40),
       happiness: irand(55, 85),
-      age: 0,
-      growth: 0,
+      age: 95,
+      growth: 1,
       lastBreedAt: -999,
       accessory: null,
       retargetAt: this.time,
@@ -754,14 +754,13 @@ export class Aquarium {
     const drawables: Snapshot["drawables"] = [];
     const frame = Math.floor(this.time * 2);
 
-    for (let x = 0; x < this.w; x++) {
-      drawables.push({ x, y: 0, lines: [(x + frame) % 4 === 0 ? "-" : "~"], color: "foam", z: 0 });
-    }
-    for (let x = 0; x < this.w; x++) {
-      const ch = (x + Math.floor(this.time)) % 2 === 0 ? "." : ":";
-      drawables.push({ x, y: this.h - 2, lines: [ch], color: "sand", z: 1 });
-      drawables.push({ x, y: this.h - 1, lines: ["░"], color: "sand", z: 1 });
-    }
+    const foamLine = Array.from({ length: this.w }, (_, x) => ((x + frame) % 4 === 0 ? "-" : "~")).join("");
+    drawables.push({ x: 0, y: 0, lines: [foamLine], color: "foam", z: 0 });
+    const sand1 = Array.from({ length: this.w }, (_, x) =>
+      (x + Math.floor(this.time)) % 2 === 0 ? "." : ":",
+    ).join("");
+    drawables.push({ x: 0, y: this.h - 2, lines: [sand1], color: "sand", z: 1 });
+    drawables.push({ x: 0, y: this.h - 1, lines: ["░".repeat(this.w)], color: "sand", z: 1 });
 
     for (const d of this.decors) {
       const art = decorArt(d.kind, frame + d.x);
