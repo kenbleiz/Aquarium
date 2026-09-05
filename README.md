@@ -1,117 +1,62 @@
-# ASCII Aquarium
+# Arc — Stream → Content Engine
 
-Overlay OBS **transparent** : un aquarium ASCII autonome, piloté par le chat Twitch.
+Dépose une VOD MP4. Arc analyse **en parallèle** la vidéo, l’audio, la transcription, les réactions, les scènes, le chat Twitch/YouTube et le contexte de jeu. Il ne cherche pas le cri le plus fort : il reconstitue une **histoire** qu’un inconnu peut comprendre.
 
-A living ASCII aquarium as a transparent **OBS Browser Source**, plus a Twitch chat bot. The tank keeps swimming even when chat is quiet.
+> contexte → tension → événement → réaction → conclusion
 
----
+Objectif : **4 h de VOD → 10 à 30 contenus potentiels en quelques minutes.** Le streamer choisit ensuite ce qu’il publie.
 
-## OBS en 2 minutes / OBS in 2 minutes
+## Ce que chaque clip contient
 
-1. `npm install` puis `npm start`
-2. Dans OBS : **Sources → + → Browser**
-   - URL : `http://127.0.0.1:3000/`
-   - Width / Largeur : **`1920`**
-   - Height / Hauteur : **`1080`**
-   - Cocher **Shutdown source when not visible** : non (laissez tourner)
-   - CSS personnalisé / Custom CSS :
+- découpe intelligente (début / fin calés sur l’arc, pas sur le pic)
+- sous-titres dynamiques
+- recadrage vertical 9:16 (TikTok, Shorts, Reels)
+- zooms / punch-in sur l’événement et la réaction
+- titre, description, hashtags, miniature
+- **score de potentiel viral** (pénalise les cris isolés)
 
-```css
-body { background-color: rgba(0, 0, 0, 0) !important; margin: 0; overflow: hidden; }
-```
-
-3. Placez la source en **plein cadre** (0, 0) — l’overlay remplit le 1920×1080, fond transparent.
-
-**Si le bac est vide (pas de poissons) :**
-- Le serveur `npm start` doit rester lancé. L’URL OBS doit être `http://127.0.0.1:3000/` — **pas** un fichier HTML local.
-- Testez d’abord [http://127.0.0.1:3000/?preview=1](http://127.0.0.1:3000/?preview=1) : le HUD doit afficher `🐟 12` (ou plus), pas `🐟 0`.
-- `!fish` / `!poisson` dans le chat (ou sur `/debug.html`) adopte un poisson à votre nom.
-- Vous pouvez supprimer `data/aquarium.json` puis relancer pour réinitialiser le bac.
-
-Page de test local (sans OBS) : [http://127.0.0.1:3000/?preview=1](http://127.0.0.1:3000/?preview=1) — `?preview=1` ajoute un fond océan sombre (l’overlay OBS reste transparent).  
-Simulateur de chat : [http://127.0.0.1:3000/debug.html](http://127.0.0.1:3000/debug.html)
-
----
-
-## Token Twitch (bot)
-
-Sans credentials, l’aquarium **tourne quand même** (mode dry-run). Pour le chat :
-
-1. Créez un compte bot (ou utilisez le vôtre)
-2. Token IRC : [https://twitchapps.com/tmi/](https://twitchapps.com/tmi/) — connectez le compte bot, copiez `oauth:…`
-3. Copiez `.env.example` → `.env` :
-
-```
-TWITCH_USERNAME=monbot
-TWITCH_OAUTH_TOKEN=oauth:xxxxxxxx
-TWITCH_CHANNEL=monstream
-PORT=3000
-```
-
-4. Relancez `npm start`. Le bot rejoint `#monstream` et répond aux commandes.
-
-Le bot a besoin d’être **modérateur** ou d’envoyer des messages (permis par défaut). Le token TMI ne lit que le chat IRC — pas l’API Helix.
-
----
-
-## Installation
+## Lancer
 
 ```bash
 npm install
-cp .env.example .env   # optionnel
-npm start              # production
-npm run dev            # reload
+cp .env.example .env.local   # optionnel, pour l’enrichissement IA
+npm run dev
 ```
 
-- Overlay : `http://127.0.0.1:3000/`
-- Debug chat : `http://127.0.0.1:3000/debug.html`
-- Santé : `http://127.0.0.1:3000/health`
-- API : `POST /api/chat` `{ "user": "Alice", "message": "!fish" }`
+Ouvre [http://127.0.0.1:3000](http://127.0.0.1:3000).
 
-Si OBS est sur une autre machine, utilisez l’IP LAN (`http://192.168.x.x:3000/`) et ouvrez le pare-feu sur `PORT`.
+- **Session démo 4h03** — ranked night Valorant, 10 histoires, 4 cris écartés (sans upload)
+- **Extrait réel 90s** — génère une VOD de test, lance ffmpeg, rend de vrais clips 9:16
+- **Ta VOD** — MP4 + chat JSON/TXT optionnel + SRT/VTT optionnel
 
----
+## Chat
 
-## Commandes chat (FR + EN)
+Formats acceptés :
 
-| Commande | Alias | Effet |
-|---|---|---|
-| `!fish` | `!poisson` `!adopt` | Adopte un poisson à ton nom (1 actif, cooldown) |
-| `!feed` | `!nourrir` `!miam` | Jette des granulés (rate-limit) |
-| `!aquarium` | `!tank` `!bac` | État du bac |
-| `!myfish` | `!monpoisson` | Ton poisson (espèce, âge, bonheur, rareté) |
-| `!name <nom>` | `!nom` | Renomme |
-| `!release` | `!relacher` | Relâche dans la nature |
-| `!catch` | `!peche` `!pêche` | Mini-jeu : tapez le mot affiché |
-| `!race` | `!course` | Course — `!go` / `!allez` pour cheer |
-| `!battle @user` | `!duel` | Parade amicale (RNG + stats, pas de toxicité) |
-| `!treasure` | `!tresor` `!creuser` | Pièces (cooldown) |
-| `!shop` `!buy` | `!boutique` `!acheter` | Cosmétiques |
-| `!decor <item>` | `!deco` | Algue, château, coffre… (coûte des 🪙) |
-| `!top` | `!classement` | Riches / heureux / éleveurs (`!top happy`) |
-| `!coins` | `!or` | Solde |
-| `!help` | `!aide` | Liste courte |
+- JSON Twitch Downloader (`comments[].content_offset_seconds`)
+- `{ "messages": [{ "t": 12.5, "user": "kai", "text": "POG" }] }`
+- Logs `[0:01:02] kai: 1v3 POG`
 
-Raretés : **Commun → Peu commun → Rare → Épique → Légendaire → Mythique** (sprites + couleurs).
+## IA (optionnel)
 
-Événements globaux (chat + bannière overlay) : Frénésie alimentaire, Alerte requin, Tempête de bulles, Heure dorée, pêche éclair, course.
+Sans clé, le moteur d’arcs et les métadonnées heuristiques suffisent. Avec `AI_GATEWAY_API_KEY` (Vercel AI Gateway), les titres / descriptions passent par `google/gemini-3.8-flash`.
 
-Subs / bits : plus de nourriture, spawn rare (si le bot reçoit les events tmi).
+## Tests
 
----
+```bash
+npm test
+```
+
+Le test central vérifie qu’un clutch promo complet **bat** un cri de 8 secondes sans contexte.
 
 ## Architecture
 
 ```
-overlay/     page OBS (HTML/CSS/JS) — fond transparent, rendu ASCII
-src/         serveur Express + WebSocket + bot tmi.js + simulation
-data/        sauvegarde JSON (poissons, viewers, pièces, décors)
+src/lib/engine/     arcs, score viral, parsers chat/SRT (pur TypeScript)
+src/lib/media/      ffmpeg : probe, énergie audio, scènes, rendu 9:16
+src/lib/pipeline.ts orchestration d’une session
+src/app/            studio Next.js
+data/sessions/      VOD, chat, clips rendus (gitignored)
 ```
 
-L’état vit **côté serveur**. L’overlay est un renderer synchro ~12 FPS via `/ws`. Sans token Twitch, simulez le chat via `/debug.html` ou `POST /api/chat`.
-
----
-
-## English (short)
-
-Transparent OBS Browser Source + Twitch IRC bot. `npm start`, add Browser source `http://127.0.0.1:3000/` at **1920×1080**, paste the CSS above. Put Twitch creds in `.env` from [twitchapps.com/tmi](https://twitchapps.com/tmi/). The tank runs autonomously (fish, bubbles, day/night, breeding, events) even with nobody chatting. Persistence is `data/aquarium.json`.
+FFmpeg et ffprobe doivent être dans le PATH.
