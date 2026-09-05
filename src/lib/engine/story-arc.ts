@@ -11,7 +11,7 @@ import {
 import {
   clamp,
   localMaxima,
-  overlapRatio,
+  overlapOverShorter,
   percentile,
   slope,
 } from "./math";
@@ -368,7 +368,7 @@ function nms(stories: RawStory[]): RawStory[] {
   for (const story of ranked) {
     const overlaps = kept.some(
       (other) =>
-        overlapRatio(story.startMs, story.endMs, other.startMs, other.endMs) > 0.42,
+        overlapOverShorter(story.startMs, story.endMs, other.startMs, other.endMs) > 0.38,
     );
     if (!overlaps) kept.push(story);
   }

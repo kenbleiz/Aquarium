@@ -95,6 +95,17 @@ export function overlapRatio(
   return union <= 0 ? 0 : inter / union;
 }
 
+export function overlapOverShorter(
+  a0: number,
+  a1: number,
+  b0: number,
+  b1: number,
+): number {
+  const inter = Math.max(0, Math.min(a1, b1) - Math.max(a0, b0));
+  const minLen = Math.min(a1 - a0, b1 - b0);
+  return minLen <= 0 ? 0 : inter / minLen;
+}
+
 export function formatTimecode(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000));
   const h = Math.floor(total / 3600);
